@@ -28,6 +28,7 @@ const int receive_pin = 3;
 #define TEMP1 4
 #define LIGHTLEVEL1 5
 #define LIGHTLEVEL2 6
+#define FREEZEWARNING 7
 
 int frontdoorstate;
 int backdoorstate;
@@ -163,6 +164,9 @@ void loop(){
       case LIGHTLEVEL2:
         Serial.println("lightlevel2");
         break;      
+      case FREEZEWARNING:
+        Serial.println("CHECK THE FREEZER... IT IS GETTING HOT");
+        break;          
     }       
    
     Serial.print("value="); 

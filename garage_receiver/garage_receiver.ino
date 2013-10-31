@@ -6,6 +6,8 @@
 const int transmit_pin = 0;
 const int receive_pin = 1;
 
+const int freezewarning=75;
+
 //pins
 #define DOOR1_TRIGGER 2
 #define DOOR2_TRIGGER 3
@@ -42,6 +44,7 @@ const int receive_pin = 1;
 #define TEMP1 4
 #define LIGHTLEVEL1 5
 #define LIGHTLEVEL2 6
+#define FREEZEWARNING 7
 
 int door1state;
 int door2state;
@@ -53,6 +56,7 @@ int lightlevel1;
 int lightlevel2;
 
 int statusloop;
+int timedbuzzerenabled=0;
 
 //create object
 EasyTransferVirtualWire ETin, ETout;
@@ -77,7 +81,7 @@ RECEIVE_DATA_STRUCTURE rxdata;
 SEND_DATA_STRUCTURE txdata;
 
 TimedAction timedAction = TimedAction(10000,sendstatusall);
-TimedAction timedActionBZ = TimedAction(5000,warningbuzzer);
+TimedAction timedActionBZ = TimedAction(6000,warningbuzzer);
 
 void setup(){
   
@@ -212,6 +216,9 @@ void sendstatus(int statustype){
       break;
     case LIGHTLEVEL2:
       txdata.value=lightlevel2;
+      break; 
+    case FREEZEWARNING:
+      txdata.value=0;
       break;      
   }
 
@@ -307,8 +314,12 @@ int checkstate(int statustype){
           sendstatus(FREEZEWARNING);
           warningbuzzer();
           timedActionBZ.reset();
-          timedActionBZ.enable();            
-        }     
+          timedActionBZ.enable(); 
+          timedbuzzerenabled=1;          
+        } else if(timedbuzzerenabled==1){
+          timedbuzzerenabled=0;
+          timedActionBZ.disable();  
+        }  
         
        returnval=readtemp;
         }
@@ -320,7 +331,27 @@ int checkstate(int statustype){
 }
 
 void warningbuzzer(){
+  for(int i = 0; i < 3; ++i)
+  {
+    // alternate between two tones, one high and one low
+    buzz(BUZZER,400, 400);
+    buzz(BUZZER,800, 400);
+  }
+}
 
+void buzz(int targetPin, long frequency, long length) {
+  long delayValue = 1000000/frequency/2; // calculate the delay value between transitions
+  //// 1 second's worth of microseconds, divided by the frequency, then split in half since
+  //// there are two phases to each cycle
+  long numCycles = frequency * length/ 1000; // calculate the number of cycles for proper timing
+  //// multiply frequency, which is really cycles per second, by the number of seconds to 
+  //// get the total number of cycles to produce
+ for (long i=0; i < numCycles; i++){ // for the calculated length of time...
+    digitalWrite(targetPin,HIGH); // write the buzzer pin high to push out the diaphram
+    delayMicroseconds(delayValue); // wait for the calculated delay value
+    digitalWrite(targetPin,LOW); // write the buzzer pin low to pull back the diaphram
+    delayMicroseconds(delayValue); // wait againf or the calculated delay value
+  }
 }
 
 double Thermister(int RawADC) {
